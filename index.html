@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edelmetall-Kompass</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1b1a18">
+<meta name="apple-mobile-web-app-title" content="Kompass">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: nüchtern wie der Grafik-Desk einer Wirtschaftszeitung, ehrlich zu Unsicherheit
+   IDEA: ein Barren-Prüfschein – Kurs, Trend, Feingehalt der Entscheidung
+   PICTURE: großer Kursverlauf mit Trendkanal und Prognosefächer
+   COLOUR and TYPE: weißes Papier, Gold #b8860b, Silber #6f7b86, Ziegel #c8371e als Signal; Archivo + Inter
+   LAYOUT: Befund als Titel, Kennzahlen, Diagramm, Signale, Rechner, Methode */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#141413);--panel:light-dark(#f4f2ee,#1f1e1c);--ink:light-dark(#1b1a18,#ecebe7);
+--mute:light-dark(#66625b,#a7a39b);--line:light-dark(#dcd8d0,#34322e);
+--gold:light-dark(#b8860b,#e0b54a);--silver:light-dark(#5f6b76,#b9c2ca);--red:light-dark(#c8371e,#ff7a5c);--ok:light-dark(#2f7d4f,#6fcf97)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:Archivo,system-ui,sans-serif;line-height:1.08;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,4.4vw,46px);font-weight:800}
+h2{font-size:24px;font-weight:700;margin-bottom:12px}
+.band{padding:clamp(22px,3.5vw,48px) max(5vw,16px)}
+.wrap{max-width:1180px;margin:0 auto}
+.sub{color:var(--mute);margin:10px 0 0;max-width:70ch}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
+.kpi{background:var(--panel);border-radius:10px;padding:14px 16px}
+.kpi b{display:block;font:800 clamp(22px,3vw,30px)/1.1 Archivo,sans-serif;white-space:nowrap}
+.kpi small{color:var(--mute);font-size:13px;display:block}
+.kpi .l{font-size:14px;font-weight:600}
+.g b{color:var(--gold)}.s b{color:var(--silver)}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:20px 0 10px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:none;color:var(--ink);font:600 15px Inter,sans-serif;padding:0 14px;min-height:44px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+label.inl{display:inline-flex;gap:8px;align-items:center;font-size:15px}
+select,input{font:16px Inter,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;min-height:44px;padding:0 10px}
+input[type=range]{padding:0;accent-color:var(--gold);width:140px}
+.fig{position:relative;min-height:380px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--mute);margin-top:6px}
+.legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.card{background:var(--panel);border-radius:12px;padding:18px 20px}
+.card h3{font-size:20px;margin-bottom:6px}
+.tag{display:inline-block;font:700 14px Inter,sans-serif;padding:4px 10px;border-radius:999px;color:#fff}
+.t-good{background:var(--ok)}.t-mid{background:#8a7f6a}.t-bad{background:var(--red)}
+.row{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:7px 0;font-size:15px}
+.row span:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.verdict{border-left:4px solid var(--gold);padding:14px 18px;background:var(--panel);border-radius:0 12px 12px 0;font-size:17px;margin-top:16px}
+.form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end}
+.lamp{border-radius:14px;padding:18px 20px;color:#fff}
+.lamp h3{font-size:22px;margin-bottom:4px}.lamp p{margin:4px 0 0}
+.lamp .dot{display:inline-block;width:14px;height:14px;border-radius:50%;background:#fff;margin-right:8px;vertical-align:1px}
+.l-green{background:var(--ok)}.l-yellow{background:#c99a0e}.l-red{background:var(--red)}
+.rules{margin-top:18px;border:1px solid var(--line);border-radius:12px;padding:16px 20px}
+.rules h3{font-size:18px}.rules ol{margin:8px 0 0;padding-left:20px}
+.buy{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.buy span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+.form label{display:grid;gap:4px;font-size:14px;color:var(--mute)}
+.btn{background:var(--ink);color:var(--bg);border:0;border-radius:8px;font:600 15px Inter,sans-serif;min-height:44px;padding:0 16px;cursor:pointer}
+.big{font:800 clamp(26px,4vw,38px)/1.1 Archivo,sans-serif;white-space:nowrap}
+.note{font-size:13px;color:var(--mute)}
+.alert{background:var(--ok);color:#fff;border-radius:12px;padding:14px 18px;margin-bottom:18px;font-size:17px}
+.alert b{font-family:Archivo,sans-serif}
+.alert[hidden]{display:none}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;font-size:13px;color:var(--mute);font-weight:600;padding:8px;border-bottom:2px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line)}
+.sz td:not(:first-child),.sz th:not(:first-child){text-align:right;white-space:nowrap}
+tr.over{opacity:.45}
+tr.hit td{background:color-mix(in srgb,var(--ok) 20%,transparent)}
+tr.hit td:first-child{box-shadow:inset 4px 0 var(--ok)}
+.mini{background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;min-height:36px;padding:0 10px;font:600 14px Inter,sans-serif;cursor:pointer}
+.al{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:var(--panel);margin-bottom:8px}
+.al.hit{background:var(--ok);color:#fff}
+.al.hit .mini{color:#fff;border-color:#fff8}
+details{margin-top:12px}summary{cursor:pointer;font-weight:600;min-height:32px}
+ul{padding-left:20px}li{margin:4px 0}
+@media(max-width:800px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.grid2{grid-template-columns:minmax(0,1fr)}.fig{min-height:300px}}
+@media(prefers-reduced-motion:no-preference){.fc path.hist{stroke-dasharray:4000;stroke-dashoffset:4000;animation:d 1.2s ease-out forwards}@keyframes d{to{stroke-dashoffset:0}}}
+</style>
+</head>
+<body>
+<section class="band"><div class="wrap">
+  <div id="alert" class="alert" hidden></div>
+  <p class="note" style="margin:0 0 6px">Deine Kaufhilfe für Maple Leafs</p>
+  <h1 id="title">Edelmetall-Kompass</h1>
+  <div class="grid2" id="ampel" style="margin-top:20px"></div>
+  <div class="card" style="margin-top:16px">
+    <label class="inl" style="flex-wrap:wrap"><b>Wie viel willst du diesen Monat ausgeben?</b> <input id="amt" type="number" step="10" inputmode="decimal" style="width:120px"> €</label>
+    <div id="plan" style="margin-top:12px"></div>
+  </div>
+  <details><summary>Warum diese Empfehlung?</summary><ul id="why"></ul></details>
+  <div class="rules">
+    <h3>Drei einfache Regeln</h3>
+    <ol>
+      <li><b>Regelmäßig kaufen.</b> Jeden Monat einen festen Betrag – dann musst du nicht den perfekten Tag erwischen.</li>
+      <li><b>Ampel nutzen.</b> Bei Grün darf es etwas mehr sein, bei Gelb normal, bei Rot lieber warten und das Geld zur Seite legen.</li>
+      <li><b>Nur Geld, das du lange nicht brauchst.</b> Edelmetall schwankt stark – 2026 ist Silber vom Hoch um mehr als die Hälfte gefallen.</li>
+    </ol>
+  </div>
+</div></section>
+
+<section class="band" style="padding-top:0"><div class="wrap">
+  <h2>Kursverlauf &amp; Prognose</h2>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="ctl">
+    <div class="seg" role="group" aria-label="Reihe">
+      <button data-m="gold" aria-pressed="true">Gold</button><button data-m="silver" aria-pressed="false">Silber</button><button data-m="ratio" aria-pressed="false">Gold/Silber-Ratio</button>
+    </div>
+  </div>
+  <details style="margin:0 0 10px"><summary>Mehr Einstellungen fürs Diagramm</summary>
+  <div class="ctl">
+    <label class="inl">Ab <select id="from"><option value="2000">2000</option><option value="2010">2010</option><option value="2016" selected>2016</option><option value="2022">2022</option></select></label>
+    <label class="inl"><input type="checkbox" id="log" style="min-height:auto;width:20px;height:20px"> log. Skala</label>
+  </div>
+  <div class="ctl" style="margin-top:0">
+    <label class="inl">Trend aus den letzten <select id="win"><option value="5">5</option><option value="10">10</option><option value="20" selected>20</option><option value="26">26</option></select> Jahren</label>
+    <label class="inl">Prognose <input type="range" id="hor" min="1" max="5" value="2"> <span id="horv">2 J.</span></label>
+  </div></details>
+  <div class="fig fc"><svg id="chart" role="img" aria-label="Preisverlauf mit Trend und Prognose"></svg></div>
+  <div class="legend" id="legend"></div>
+  <p class="note">Bis 2024 Jahresdurchschnitte, ab 2025 Monatsdurchschnitte (gerundete Näherungswerte, USD je Feinunze). Letzter Punkt = aktueller Preis.</p>
+</div></section>
+
+<section class="band" style="background:var(--panel)"><div class="wrap">
+  <h2>Wann welches Metall?</h2>
+  <div class="grid2" id="sig"></div>
+  <div class="verdict" id="verdict"></div>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <h2>Maple Leafs &amp; kleine Größen – was kostet was?</h2>
+  <p class="note" style="margin-top:0">Trag hier den Tageskurs ein (z. B. von gold.de) – alles rechnet sofort neu und bleibt in deinem Browser gespeichert. Größen über deinem Budget werden blass.</p>
+  <form class="form" id="f">
+    <label>Gold USD/oz<input id="pg" type="number" step="1" inputmode="decimal"></label>
+    <label>Silber USD/oz<input id="ps" type="number" step="0.01" inputmode="decimal"></label>
+    <label>1 USD in EUR<input id="fx" type="number" step="0.001" inputmode="decimal"></label>
+  </form>
+  <div class="ctl"><div class="seg" role="group" aria-label="Metall" id="szseg">
+    <button data-z="ml" aria-pressed="true">Maple Leaf</button><button data-z="gold" aria-pressed="false">Goldbarren</button><button data-z="silver" aria-pressed="false">Silberbarren</button></div></div>
+  <table class="stack sz"><thead><tr><th>Größe</th><th>Feingewicht</th><th>Metallwert</th><th>ca. Kaufpreis</th><th>€ je Gramm</th><th></th></tr></thead><tbody id="sizes"></tbody></table>
+  <p class="note">Kaufpreis = Metallwert + typisches Händler-Aufgeld (geschätzt). Kleine Stücke sind pro Gramm deutlich teurer. Bei Silber ist die Steuer eingerechnet (Barren 19 % MwSt., Münzen meist differenzbesteuert); Anlagegold ist steuerfrei.</p>
+
+  <h2 style="margin-top:32px">Melder</h2>
+  <p class="note" style="margin-top:0">Wähle eine Größe und deinen Wunschpreis. Ist der Kaufpreis darunter, leuchtet die Zeile grün und oben erscheint ein Hinweis.</p>
+  <form class="form" id="af">
+    <label style="grid-column:span 2">Größe<select id="asz"></select></label>
+    <label>Wunschpreis in €<input id="atg" type="number" step="1" inputmode="decimal" required></label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;grid-column:1/-1"><span class="note" style="align-self:center">Schnell wählen:</span><button class="mini" type="button" data-q="0.95">5 % günstiger als heute</button><button class="mini" type="button" data-q="0.9">10 % günstiger</button><button class="mini" type="button" data-q="0.85">15 % günstiger</button><button class="btn" type="submit" style="margin-left:auto">Melder setzen</button></div>
+  </form>
+  <div id="alarms" style="margin-top:12px"></div>
+  <label class="inl" style="margin-top:10px"><input type="checkbox" id="sigal" style="min-height:auto;width:20px;height:20px"> Auch melden, wenn die Ampel auf Grün springt</label>
+  <div style="margin-top:10px"><button class="btn" id="notif" type="button" style="background:var(--panel);color:var(--ink);border:1px solid var(--line)">Browser-Benachrichtigung erlauben</button> <span class="note" id="notifv"></span></div>
+  <h3 style="margin-top:28px;font-size:20px">Melder aufs Handy</h3>
+  <p class="note" style="margin-top:4px">Deine Melder als Einstellung für den Handy-Melder (GitHub + ntfy). Kopieren und in <b>melder.json</b> im Repo einfügen.</p>
+  <button class="btn" id="exp" type="button">melder.json erzeugen &amp; kopieren</button> <span class="note" id="expv"></span>
+  <textarea id="expt" readonly hidden style="width:100%;min-height:180px;margin-top:10px;font:14px ui-monospace,monospace;padding:10px"></textarea>
+  <p class="note" id="live"></p>
+</div></section>
+
+<section class="band" style="background:var(--panel)"><div class="wrap">
+  <h2>So rechnet das Programm</h2>
+  <ul>
+    <li><b>Trend:</b> exponentielle Regression (Gerade auf logarithmierten Preisen) über das gewählte Zeitfenster. Daraus die jährliche Trendrendite.</li>
+    <li><b>Prognosefächer:</b> Trend in die Zukunft verlängert; der Fächer zeigt den Bereich, in dem rund 80 % der bisherigen Abweichungen vom Trend lagen.</li>
+    <li><b>Bewertung:</b> Liegt der Preis mehr als 10 % unter dem Trend, gilt er als günstig; mehr als 15 % darüber als teuer.</li>
+    <li><b>Gold/Silber-Ratio:</b> Wie viele Unzen Silber kostet eine Unze Gold? Über 80 war Silber historisch relativ billig, unter 60 eher Gold.</li>
+  </ul>
+  <p><b>Wichtig:</b> Das ist eine Statistik über die Vergangenheit, keine Vorhersage. 2026 zeigt es gut: Gold stieg im Januar auf fast 5.600 $, Silber auf über 120 $ – und beide fielen danach massiv. Ich bin kein Finanzberater; nutze das als Orientierung, nicht als Kaufbefehl. Wer das Timing nicht treffen will, kauft in festen Raten (Sparplan) und nutzt die Signale nur, um die Raten zu gewichten.</p>
+  <details><summary>Datenstand</summary><p class="note">Historie: Jahres- und Monatsdurchschnitte nach LBMA/World-Bank-Größenordnung, gerundet. Aktueller Kurs voreingestellt auf Mitte November 2026 (Gold ≈ 3.950 $, Silber ≈ 50 $). Allzeithochs Januar 2026: Gold ≈ 5.600 $, Silber ≈ 121,6 $.</p></details>
+</div></section>
+
+<script>
+{
+const AG=[279,271,310,363,409,445,604,695,872,972,1225,1572,1669,1411,1266,1160,1251,1257,1268,1393,1770,1799,1800,1943,2386];
+const AS=[4.95,4.37,4.60,4.88,6.67,7.32,11.55,13.38,14.99,14.67,20.19,35.12,31.15,23.79,19.08,15.68,17.14,17.05,15.71,16.21,20.55,25.14,21.73,23.35,28.27];
+const MG=[2710,2895,2985,3195,3280,3350,3340,3365,3665,4060,4085,4310,4900,4750,4480,4560,4650,4290,4120,4230,4220,4040,3960];
+const MS=[30.3,32.3,33.0,32.3,32.6,36.0,37.6,38.1,42.9,50.4,50.6,64.0,96,82,71,74,75,67,63,65,64,56,50];
+const ATH={gold:5600,silver:121.6};
+const DEF={pg:3950,ps:50,fx:0.89,amt:300,al:[],sig:true,zm:'ml',sent:{}};
+const OZ=31.1035;
+// w = Feingewicht in g, pr = geschätztes Aufgeld inkl. Steuer
+const SIZES=[
+ {id:'ml-g120',m:'gold',n:'Gold Maple Leaf 1/20 oz',w:OZ/20,pr:.20},
+ {id:'ml-g110',m:'gold',n:'Gold Maple Leaf 1/10 oz',w:OZ/10,pr:.10},
+ {id:'ml-g14',m:'gold',n:'Gold Maple Leaf 1/4 oz',w:OZ/4,pr:.07},
+ {id:'ml-g12',m:'gold',n:'Gold Maple Leaf 1/2 oz',w:OZ/2,pr:.05},
+ {id:'ml-g1',m:'gold',n:'Gold Maple Leaf 1 oz',w:OZ,pr:.03},
+ {id:'ml-s1',m:'silver',n:'Silber Maple Leaf 1 oz',w:OZ,pr:.27},
+ {id:'g1',m:'gold',n:'Goldbarren 1 g',w:1,pr:.15},
+ {id:'g2',m:'gold',n:'Goldbarren 2 g',w:2,pr:.10},
+ {id:'g25',m:'gold',n:'Goldbarren 2,5 g',w:2.5,pr:.09},
+ {id:'g5',m:'gold',n:'Goldbarren 5 g',w:5,pr:.065},
+ {id:'g10',m:'gold',n:'Goldbarren 10 g',w:10,pr:.045},
+ {id:'g20',m:'gold',n:'Goldbarren 20 g',w:20,pr:.04},
+ {id:'s10',m:'silver',n:'Silberbarren 10 g',w:10,pr:.60},
+ {id:'s50',m:'silver',n:'Silberbarren 50 g',w:50,pr:.40},
+ {id:'s100',m:'silver',n:'Silberbarren 100 g',w:100,pr:.33},
+ {id:'s250',m:'silver',n:'Silberbarren 250 g',w:250,pr:.29},
+ {id:'s500',m:'silver',n:'Silberbarren 500 g',w:500,pr:.27},
+ {id:'s1k',m:'silver',n:'Silberbarren 1 kg',w:1000,pr:.25}];
+const inView=z=>P.zm==='ml'?z.id.startsWith('ml-'):(z.m===P.zm&&!z.id.startsWith('ml-'));
+let LAST={pick:null,name:null,greens:[]};
+const NOW=2026+10.8/12;
+const st={m:'gold',from:2016,log:false,win:20,hor:2};
+let P={...DEF};
+try{Object.assign(P,JSON.parse(localStorage.getItem('emk')||'{}'))}catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=(v,d=0)=>v.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct=v=>(v>0?'+':'')+fmt(v*100,1)+' %';
+
+function series(k){
+  const A=k==='gold'?AG:AS,M=k==='gold'?MG:MS,out=[];
+  A.forEach((v,i)=>out.push([2000+i+0.5,v]));
+  M.forEach((v,i)=>out.push([2025+(i+0.5)/12,v]));
+  out.push([NOW,k==='gold'?P.pg:P.ps]);
+  return out;
+}
+function ratioSeries(){const g=series('gold'),s=series('silver');return g.map((p,i)=>[p[0],p[1]/s[i][1]])}
+
+function trend(k){
+  const d=series(k).filter(p=>p[0]>=NOW-st.win);
+  const n=d.length,xs=d.map(p=>p[0]-2000),ys=d.map(p=>Math.log(p[1]));
+  const mx=xs.reduce((a,b)=>a+b)/n,my=ys.reduce((a,b)=>a+b)/n;
+  let sxy=0,sxx=0;xs.forEach((x,i)=>{sxy+=(x-mx)*(ys[i]-my);sxx+=(x-mx)**2});
+  const b=sxy/sxx,a=my-b*mx;
+  const res=ys.map((y,i)=>y-(a+b*xs[i]));
+  const sd=Math.sqrt(res.reduce((s,r)=>s+r*r,0)/Math.max(1,n-2));
+  const f=t=>Math.exp(a+b*(t-2000));
+  return {f,sd,rate:Math.exp(b)-1,t0:d[0][0]};
+}
+
+function analyze(k){
+  const T=trend(k),cur=k==='gold'?P.pg:P.ps,tv=T.f(NOW),dev=cur/tv-1;
+  const fut=T.f(NOW+st.hor),z=1.28;
+  let tag,cls;
+  if(dev<-0.10){tag='günstig';cls='t-good'}else if(dev>0.15){tag='teuer';cls='t-bad'}else{tag='fair';cls='t-mid'}
+  return {T,cur,tv,dev,fut,lo:fut*Math.exp(-z*T.sd),hi:fut*Math.exp(z*T.sd),dd:cur/ATH[k]-1,tag,cls};
+}
+
+function ratioInfo(){
+  const r=ratioSeries(),cur=P.pg/P.ps,avg=r.reduce((s,p)=>s+p[1],0)/r.length;
+  let fav,txt;
+  if(cur>80){fav='silver';txt='Silber ist im Verhältnis zu Gold günstig'}
+  else if(cur<60){fav='gold';txt='Gold ist im Verhältnis zu Silber günstig'}
+  else{fav=null;txt='Gold und Silber sind zueinander fair bewertet'}
+  return {cur,avg,fav,txt};
+}
+
+function kpis(){
+  const g=analyze('gold'),s=analyze('silver'),R=ratioInfo();
+  const k=[
+    ['g','Gold',fmt(P.pg)+' $',fmt(P.pg*P.fx)+' €/oz · '+fmt(P.pg*P.fx/31.1035,2)+' €/g'],
+    ['s','Silber',fmt(P.ps,2)+' $',fmt(P.ps*P.fx,2)+' €/oz · '+fmt(P.ps*P.fx/31.1035,2)+' €/g'],
+    ['','Gold/Silber-Ratio',fmt(R.cur,1),'Ø seit 2000: '+fmt(R.avg,1)],
+    ['','Abstand zum Hoch','G '+pct(g.dd),'Silber '+pct(s.dd)]
+  ];
+  $('kpis').innerHTML=k.map(x=>`<div class="kpi ${x[0]}"><span class="l">${x[1]}</span><b>${x[2]}</b><small>${x[3]}</small></div>`).join('');
+}
+
+function signals(){
+  const g=analyze('gold'),s=analyze('silver'),R=ratioInfo();
+  const card=(n,a,c)=>`<div class="card"><h3 style="color:var(--${c})">${n} <span class="tag ${a.cls}">${a.tag}</span></h3>
+   <div class="row"><span>Aktuell</span><span>${fmt(a.cur,c==='gold'?0:2)} $</span></div>
+   <div class="row"><span>Trendwert heute</span><span>${fmt(a.tv,c==='gold'?0:2)} $</span></div>
+   <div class="row"><span>Abweichung vom Trend</span><span>${pct(a.dev)}</span></div>
+   <div class="row"><span>Trendrendite p. a.</span><span>${pct(a.T.rate)}</span></div>
+   <div class="row"><span>Trend in ${st.hor} J.</span><span>${fmt(a.fut,c==='gold'?0:2)} $</span></div>
+   <div class="row"><span>Bandbreite (80 %)</span><span>${fmt(a.lo,c==='gold'?0:1)}–${fmt(a.hi,c==='gold'?0:1)} $</span></div></div>`;
+  $('sig').innerHTML=card('Gold',g,'gold')+card('Silber',s,'silver');
+  const sc={'günstig':2,'fair':1,'teuer':0};
+  let pick=R.fav;
+  if(!pick){pick=sc[g.tag]>=sc[s.tag]?(sc[g.tag]===sc[s.tag]?null:'gold'):'silver'}
+  const name=pick==='gold'?'Gold':pick==='silver'?'Silber':null;
+  const both=sc[g.tag]+sc[s.tag];
+  LAST.pick=pick;LAST.name=name;
+  let t=name?`<b>Jetzt eher ${name}.</b> `:'<b>Kein klarer Favorit.</b> ';
+  t+=`Ratio ${fmt(R.cur,1)} (Ø ${fmt(R.avg,1)}): ${R.txt.toLowerCase()}. `;
+  t+=both>=3?'Beide liegen am oder unter ihrem Trend – ein vernünftiger Zeitpunkt für einen Nachkauf, gern in 2–3 Tranchen.':
+     both===2?'Die Preise sind trendnah – Sparplan weiterlaufen lassen, Raten zugunsten des Favoriten gewichten.':
+     'Die Preise liegen über ihrem Trend – kaufen nur in kleinen Raten, größere Käufe lieber nach Rücksetzern.';
+  t+=' Als grobe Regel gilt: Ratio über 80 → Silber nachkaufen, unter 60 → Gold nachkaufen oder Silber in Gold tauschen.';
+  $('verdict').innerHTML=t;
+}
+
+const save=()=>{try{localStorage.setItem('emk',JSON.stringify(P))}catch(e){}};
+const metalVal=z=>z.w*(z.m==='gold'?P.pg:P.ps)/OZ*P.fx;
+const buyPrice=z=>metalVal(z)*(1+z.pr);
+const byId=id=>SIZES.find(z=>z.id===id);
+const isHit=a=>{const z=byId(a.id);return z&&buyPrice(z)<=a.t};
+const eur=v=>fmt(v,v<100?2:0)+' €';
+
+function calc(){
+  const hitIds=P.al.filter(isHit).map(a=>a.id);
+  $('sizes').innerHTML=SIZES.filter(inView).map(z=>{
+    const bp=buyPrice(z),cls=hitIds.includes(z.id)?'hit':bp>P.amt?'over':'';
+    return `<tr class="${cls}"><td>${z.n}</td><td>${fmt(z.w,z.w<10?2:0)} g</td><td>${eur(metalVal(z))}</td><td><b>${eur(bp)}</b></td><td>${fmt(bp/z.w,2)} €</td><td><button class="mini" type="button" data-pick="${z.id}">Melder</button></td></tr>`}).join('');
+  $('alarms').innerHTML=P.al.length?P.al.map((a,i)=>{const z=byId(a.id);if(!z)return'';const h=isHit(a),bp=buyPrice(z);
+    return `<div class="al ${h?'hit':''}"><span><b>${z.n}</b> · Wunsch ≤ ${eur(a.t)} · aktuell ${eur(bp)}</span><span>${h?'<b>Kaufen möglich</b>':'noch '+eur(bp-a.t)+' drüber'} <button class="mini" type="button" data-del="${i}">Entfernen</button></span></div>`}).join(''):'<p class="note">Noch kein Melder gesetzt.</p>';
+  // Banner
+  const msgs=P.al.filter(isHit).map(a=>{const z=byId(a.id);return `${z.n} für ca. ${eur(buyPrice(z))} (dein Limit ${eur(a.t)})`});
+  if(P.sig&&LAST.greens.length)msgs.push(`Ampel grün für ${LAST.greens.join(' und ')} – guter Zeitpunkt zum Kaufen`);
+  const box=$('alert');
+  if(msgs.length){box.hidden=false;box.innerHTML='<b>Melder: </b>'+msgs.join(' · ')}else box.hidden=true;
+  notify(msgs);
+}
+
+function notify(msgs){
+  try{
+    if(!('Notification' in window)||Notification.permission!=='granted')return;
+    const today=new Date().toDateString();
+    msgs.forEach(m=>{if(P.sent[m]!==today){P.sent[m]=today;new Notification('Edelmetall-Kompass',{body:m})}});
+    save();
+  }catch(e){}
+}
+
+function fillSel(){
+  $('asz').innerHTML=SIZES.map(z=>`<option value="${z.id}">${z.n} (ca. ${eur(buyPrice(z))})</option>`).join('');
+}
+
+function draw(){
+  const s=$('chart'),W=s.clientWidth,H=s.clientHeight,narrow=W<520;
+  const m=st.m,isR=m==='ratio',col=isR?'var(--ink)':`var(--${m})`;
+  const data=(isR?ratioSeries():series(m)).filter(p=>p[0]>=st.from);
+  const T=isR?null:analyze(m);
+  const x1=isR?NOW+0.2:NOW+st.hor+0.1,x0=st.from;
+  const pad={l:narrow?44:60,r:narrow?10:20,t:16,b:30};
+  let vals=data.map(p=>p[1]);
+  const fpts=[];
+  if(T){for(let t=Math.max(x0,T.T.t0);t<=NOW+st.hor+1e-9;t+=0.1){const v=T.T.f(t);fpts.push([t,v,v*Math.exp(-1.28*T.T.sd),v*Math.exp(1.28*T.T.sd)])}
+    fpts.filter(p=>p[0]>=NOW).forEach(p=>vals.push(p[2],p[3]))}
+  if(isR)vals.push(40,90);
+  let lo=Math.min(...vals),hi=Math.max(...vals);
+  const L=st.log&&!isR;
+  if(L){lo=Math.log(lo*0.92);hi=Math.log(hi*1.05)}else{lo=Math.max(0,lo-(hi-lo)*0.08);hi=hi+(hi-lo)*0.06}
+  const X=t=>pad.l+(t-x0)/(x1-x0)*(W-pad.l-pad.r);
+  const Y=v=>{const u=L?Math.log(v):v;return pad.t+(1-(u-lo)/(hi-lo))*(H-pad.t-pad.b)};
+  const path=a=>a.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join('');
+  let g='';
+  // y ticks
+  const vlo=L?Math.exp(lo):lo,vhi=L?Math.exp(hi):hi;
+  const step=(()=>{const r=(vhi-vlo)/(narrow?4:6),p=10**Math.floor(Math.log10(r)),c=[1,2,2.5,5,10].find(c=>c*p>=r);return c*p})();
+  let ticks=[];
+  if(L){for(let v=vlo;v<=vhi;){const p=10**Math.floor(Math.log10(v));[1,2,5].forEach(c=>{const t=c*p;if(t>=vlo&&t<=vhi&&!ticks.includes(t))ticks.push(t)});v=p*10}}
+  else for(let v=Math.ceil(vlo/step)*step;v<=vhi;v+=step)ticks.push(v);
+  ticks.forEach(v=>{const y=Y(v);g+=`<line x1="${pad.l}" x2="${W-pad.r}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${pad.l-6}" y="${y+4}" text-anchor="end" font-size="12" fill="var(--mute)">${isR?fmt(v):(v>=1000?fmt(v/1000,v%1000?1:0)+'k':fmt(v))}</text>`});
+  // x ticks
+  const span=x1-x0,xs=span>18?5:span>8?2:1;
+  for(let yr=Math.ceil(x0/xs)*xs;yr<=x1;yr+=xs){const x=X(yr);g+=`<line x1="${x}" x2="${x}" y1="${H-pad.b}" y2="${H-pad.b+5}" stroke="var(--mute)"/><text x="${x}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--mute)">${narrow?"'"+String(yr).slice(2):yr}</text>`}
+  // now line
+  g+=`<line x1="${X(NOW)}" x2="${X(NOW)}" y1="${pad.t}" y2="${H-pad.b}" stroke="var(--mute)" stroke-dasharray="2 4"/><text x="${X(NOW)-4}" y="${pad.t+12}" text-anchor="end" font-size="12" fill="var(--mute)">heute</text>`;
+  if(isR){
+    g+=`<rect x="${pad.l}" width="${W-pad.l-pad.r}" y="${Y(Math.min(vhi,200))}" height="${Math.max(0,Y(80)-Y(Math.min(vhi,200)))}" fill="var(--silver)" opacity=".12"/>`;
+    g+=`<rect x="${pad.l}" width="${W-pad.l-pad.r}" y="${Y(60)}" height="${Math.max(0,Y(Math.max(vlo,0))-Y(60))}" fill="var(--gold)" opacity=".14"/>`;
+    g+=`<text x="${pad.l+6}" y="${Y(80)-6}" font-size="12" fill="var(--silver)">über 80: Silber günstig</text><text x="${pad.l+6}" y="${Y(60)+16}" font-size="12" fill="var(--gold)">unter 60: Gold günstig</text>`;
+  }
+  if(T){
+    const fut=fpts.filter(p=>p[0]>=NOW-1e-9);
+    const band=fut.map(p=>[p[0],p[3]]).concat(fut.slice().reverse().map(p=>[p[0],p[2]]));
+    g+=`<path d="${path(band)}Z" fill="${col}" opacity=".16"/>`;
+    g+=`<path d="${path(fpts)}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="6 5" opacity=".8"/>`;
+    const e=fut[fut.length-1];
+    g+=`<circle cx="${X(e[0])}" cy="${Y(e[1])}" r="4" fill="${col}"/>`;
+  }
+  g+=`<path class="hist" d="${path(data)}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linejoin="round"/>`;
+  const c=data[data.length-1];
+  g+=`<circle cx="${X(c[0])}" cy="${Y(c[1])}" r="5.5" fill="var(--bg)" stroke="${col}" stroke-width="3"/>`;
+  s.innerHTML=g;
+  $('legend').innerHTML=isR?`<span><i style="background:var(--ink)"></i>Unzen Silber je Unze Gold</span>`:
+   `<span><i style="background:${col}"></i>Preis USD/oz</span><span><i style="background:${col};opacity:.6"></i>Trend (gestrichelt)</span><span><i style="background:${col};opacity:.25;height:10px"></i>Prognosefächer 80 %</span>`;
+}
+
+function light(m){
+  const a=analyze(m),R=ratioInfo(),N=m==='gold'?'Gold':'Silber',why=[];let sc=0;
+  const d=Math.abs(Math.round(a.dev*100));
+  if(a.tag==='günstig'){sc++;why.push(`${N} kostet ${d} % weniger als sein langjähriger Trend – also eher billig.`)}
+  else if(a.tag==='teuer'){sc--;why.push(`${N} kostet ${d} % mehr als sein langjähriger Trend – also eher teuer.`)}
+  else why.push(`${N} liegt nahe an seinem langjährigen Trend – ein normaler Preis.`);
+  const r=fmt(R.cur,0),avg=fmt(R.avg,0);
+  if(m==='silver'){
+    if(R.cur>80){sc++;why.push(`Für eine Unze Gold bekommt man gerade ${r} Unzen Silber (sonst im Schnitt ${avg}). Silber ist im Vergleich zu Gold billig.`)}
+    else if(R.cur<60){sc--;why.push(`Für eine Unze Gold bekommt man nur ${r} Unzen Silber (sonst ${avg}). Silber ist im Vergleich teuer.`)}
+  }else{
+    if(R.cur<60){sc++;why.push(`Gold ist im Vergleich zu Silber gerade billig (Verhältnis ${r}, sonst ${avg}).`)}
+    else if(R.cur>80){sc--;why.push(`Silber ist im Vergleich gerade das bessere Angebot (Verhältnis ${r}, sonst ${avg}).`)}
+  }
+  if(a.dd<-0.25)why.push(`${N} liegt ${Math.abs(Math.round(a.dd*100))} % unter dem Rekord vom Januar 2026.`);
+  const c=sc>=1?'green':sc<=-1?'red':'yellow';
+  return {m,N,c,why};
+}
+
+function ampel(){
+  const G=light('gold'),S=light('silver');
+  const txt={green:['Guter Zeitpunkt','Jetzt kaufen ist sinnvoll – gern etwas mehr als sonst.'],
+             yellow:['Normal','Kein Schnäppchen, aber auch nicht teuer – normal weiter kaufen.'],
+             red:['Lieber warten','Gerade eher teuer – Geld zur Seite legen und später kaufen.']};
+  const ml=[['Gold Maple Leaf',G],['Silber Maple Leaf',S]];
+  $('ampel').innerHTML=ml.map(([n,L])=>`<div class="lamp l-${L.c}"><div class="note" style="color:#fffd">${n}</div><h3><span class="dot"></span>${txt[L.c][0]}</h3><p>${txt[L.c][1]}</p></div>`).join('');
+  $('why').innerHTML=[...G.why,...S.why].map(w=>`<li>${w}</li>`).join('')+'<li>Das ist eine Rechnung mit den Kursen der Vergangenheit, keine Garantie – ich bin kein Finanzberater.</li>';
+  LAST.greens=ml.filter(x=>x[1].c==='green').map(x=>x[0]+'s');
+  // Titel
+  const gs=LAST.greens;
+  $('title').textContent=gs.length===2?'Heute guter Zeitpunkt für Gold und Silber':
+    gs.length?`Heute guter Zeitpunkt für ${gs[0]}`:
+    (G.c==='red'&&S.c==='red')?'Heute lieber warten':'Heute ein normaler Tag – regelmäßig weiter kaufen';
+  plan(G,S);
+}
+
+function plan(G,S){
+  const b=P.amt,sml=byId('ml-s1'),sp=buyPrice(sml);
+  const golds=SIZES.filter(z=>z.id.startsWith('ml-g')).sort((x,y)=>buyPrice(x)-buyPrice(y));
+  const items=[];let rest=b;
+  const addGold=lim=>{const f=golds.filter(z=>buyPrice(z)<=lim).pop();if(f){items.push([1,f.n,buyPrice(f)]);rest-=buyPrice(f)}};
+  const addSilver=()=>{const n=Math.floor(rest/sp);if(n>0){items.push([n,sml.n,n*sp]);rest-=n*sp}};
+  let note='';
+  if(G.c==='red'&&S.c==='red'){note='Beide Ampeln stehen auf Rot. Leg das Geld diesen Monat zur Seite – nächsten Monat hast du doppelt so viel.'}
+  else{
+    const gOk=G.c!=='red',sOk=S.c!=='red';
+    if(gOk&&(G.c==='green'&&S.c!=='green'||!sOk))addGold(rest);
+    else if(gOk&&G.c===S.c)addGold(rest/2);
+    if(sOk)addSilver();
+    if(!items.length)note=`Für einen Silber Maple Leaf (ca. ${eur(sp)}) reicht das Budget noch nicht – diesen Monat ansparen.`;
+  }
+  const sum=items.reduce((s,i)=>s+i[2],0);
+  $('plan').innerHTML=(items.length?'<div class="note">Dein Kaufzettel für diesen Monat:</div>'+items.map(i=>`<div class="buy"><span><b>${i[0]}×</b> ${i[1]}</span><span>ca. ${eur(i[2])}</span></div>`).join('')+
+    `<div class="buy"><span>Zusammen</span><span><b>ca. ${eur(sum)}</b></span></div>`+(rest>=1?`<div class="note">Bleiben ${eur(rest)} übrig – einfach für nächsten Monat aufheben.</div>`:''):'')+
+    (note?`<p style="margin:0">${note}</p>`:'')+'<p class="note">Preise geschätzt inkl. üblichem Händleraufschlag – beim Kauf bei 2–3 Händlern vergleichen.</p>';
+}
+
+function all(){kpis();signals();ampel();calc();draw();const v=$('asz').value;fillSel();if(v)$('asz').value=v}
+
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{st.m=b.dataset.m;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));draw()}));
+$('from').addEventListener('change',e=>{st.from=+e.target.value;draw()});
+$('log').addEventListener('change',e=>{st.log=e.target.checked;draw()});
+$('win').addEventListener('change',e=>{st.win=+e.target.value;all()});
+$('hor').addEventListener('input',e=>{st.hor=+e.target.value;$('horv').textContent=st.hor+' J.';signals();draw()});
+['pg','ps','fx','amt'].forEach(k=>{const i=$(k);i.value=P[k];i.addEventListener('input',()=>{const v=parseFloat(i.value);if(v>0){P[k]=v;save();all()}})});
+$('f').addEventListener('submit',e=>e.preventDefault());
+document.querySelectorAll('#szseg button').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.z===P.zm);b.addEventListener('click',()=>{P.zm=b.dataset.z;document.querySelectorAll('#szseg button').forEach(x=>x.setAttribute('aria-pressed',x===b));save();calc()})});
+$('sizes').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b)return;const z=byId(b.dataset.pick);$('asz').value=z.id;$('atg').value=Math.floor(buyPrice(z)*0.95);$('atg').focus();$('af').scrollIntoView({behavior:'smooth',block:'center'})});
+$('af').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(!b)return;const z=byId($('asz').value);if(z)$('atg').value=Math.floor(buyPrice(z)*parseFloat(b.dataset.q))});
+$('af').addEventListener('submit',e=>{e.preventDefault();const t=parseFloat($('atg').value);if(!(t>0))return;P.al.push({id:$('asz').value,t});save();$('atg').value='';calc()});
+$('alarms').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;P.al.splice(+b.dataset.del,1);save();calc()});
+$('exp').addEventListener('click',async()=>{
+  const cfg={usd_in_eur:P.fx,kaufsignal:P.sig,ratio_silber_ab:80,ratio_gold_unter:60,melder:P.al.filter(a=>byId(a.id)).map(a=>({stueck:a.id,wunschpreis:a.t}))};
+  const t=JSON.stringify(cfg,null,2),ta=$('expt');ta.value=t;ta.hidden=false;
+  try{await navigator.clipboard.writeText(t);$('expv').textContent='Kopiert.'}catch(e){ta.select();$('expv').textContent='Text markiert – bitte selbst kopieren.'}});
+$('sigal').checked=P.sig;$('sigal').addEventListener('change',e=>{P.sig=e.target.checked;save();calc()});
+$('notif').addEventListener('click',async()=>{
+  try{if(!('Notification' in window))throw 0;const r=await Notification.requestPermission();
+    $('notifv').textContent=r==='granted'?'Erlaubt – solange die Seite offen ist, meldet sie sich (Kurse alle 15 Min.).':'Nicht erlaubt.';calc()}
+  catch(e){$('notifv').textContent='Hier nicht möglich – funktioniert, wenn du die Datei selbst hostest (z. B. GitHub Pages).'}});
+
+const ro=new ResizeObserver(draw);ro.observe($('chart'));
+all();
+
+// Live-Kurse: funktioniert nur, wenn die Seite selbst gehostet wird (z. B. GitHub Pages)
+async function load(){
+  try{
+    const [g,s]=await Promise.all(['XAU','XAG'].map(c=>fetch('https://api.gold-api.com/price/'+c).then(r=>r.json())));
+    if(g.price>0&&s.price>0){P.pg=Math.round(g.price);P.ps=Math.round(s.price*100)/100;$('pg').value=P.pg;$('ps').value=P.ps;
+      $('live').textContent='Live-Kurs geladen von gold-api.com ('+new Date().toLocaleString('de-DE')+').';all()}
+  }catch(e){$('live').textContent='Kein Live-Kurs verfügbar – Werte bitte oben eintragen. Selbst gehostet (z. B. GitHub Pages) lädt die Seite Kurse automatisch.'}
+}
+load();setInterval(load,15*60*1000);
+}
+</script>
+</body>
+</html>

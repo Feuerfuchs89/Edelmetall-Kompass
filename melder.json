@@ -1,0 +1,10 @@
+{
+  "usd_in_eur": 0.89,
+  "kaufsignal": true,
+  "ratio_silber_ab": 80,
+  "ratio_gold_unter": 60,
+  "melder": [
+    { "stueck": "ml-g110", "wunschpreis": 380 },
+    { "stueck": "ml-s1", "wunschpreis": 52 }
+  ]
+}

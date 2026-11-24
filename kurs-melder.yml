@@ -1,0 +1,29 @@
+# Diese Datei muss bei GitHub unter  .github/workflows/kurs-melder.yml  liegen.
+name: Kurs-Melder
+
+on:
+  schedule:
+    - cron: "17 6-20/2 * * 1-5"   # Mo–Fr alle 2 Stunden (UTC), solange der Markt offen ist
+  workflow_dispatch:               # Knopf "Run workflow" zum Testen
+
+permissions:
+  contents: write
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Kurse prüfen und melden
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python melder.py
+      - name: Status speichern (damit nichts doppelt kommt)
+        run: |
+          git config user.name "kurs-melder"
+          git config user.email "kurs-melder@users.noreply.github.com"
+          git add melder-status.json
+          git diff --cached --quiet || (git commit -m "Melder-Status" && git push)
